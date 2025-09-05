@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano Ear Trainer</title>
+    <!-- We're using Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            /* Dark background */
+        }
+
+        /* Custom styles for the piano keys to create a nice visual */
+        .piano-key {
+            transition: transform 0.1s ease, background-color 0.1s ease;
+            cursor: pointer;
+        }
+
+        .piano-key:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        /* Style for a correct guess */
+        .correct {
+            background-color: #34d399;
+            /* Green color */
+            border-color: #10b981;
+        }
+
+        /* Style for a wrong guess */
+        .incorrect {
+            background-color: #ef4444;
+            /* Red color */
+            border-color: #dc2626;
+        }
+    </style>
+    <!-- Tone.js library to create and play piano sounds -->
+    <script src="https://unpkg.com/tone@14.7.58/build/Tone.js"></script>
+</head>
+
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- Main game container -->
+    <div class="bg-gray-800 p-6 md:p-8 rounded-3xl shadow-2xl max-w-4xl w-full space-y-6 border border-gray-700">
+        <!-- Top bar: title and score badge -->
+        <div class="flex items-center justify-between">
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white">Piano Ear Trainer</h1>
+          <div class="text-white text-lg font-bold bg-gray-700 border border-gray-600 rounded-xl px-4 py-2">
+            Score: <span id="score-display">0</span>
+          </div>
+        </div>
+
+        <!-- Controls | Message grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+          <!-- Controls -->
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <button id="play-note-btn"
+                  class="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-full transition-colors duration-200 shadow-md">Play</button>
+              <button id="again-btn"
+                  class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-full transition-colors duration-200 shadow-md">Hear Again</button>
+              <button id="show-btn"
+                  class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-full transition-colors duration-200 shadow-md">Show Answer</button>
+              <button id="reset-btn"
+                  class="w-full py-3 px-4 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-full transition-colors duration-200 shadow-md">Reset Score</button>
+            </div>
+            <div>
+              <label class="block text-left text-gray-300 font-semibold mb-1">Difficulty</label>
+              <select id="difficulty" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600">
+                <option value="easy">Easy (3 keys)</option>
+                <option value="medium">Medium (5 keys)</option>
+                <option value="hard" selected>Hard (7 keys)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Message + Hints -->
+          <div class="space-y-3">
+            <p id="message" class="text-xl font-semibold text-gray-200 min-h-[1.5rem]">Click Play to hear a note.</p>
+            <div id="mapping-hint" class="text-sm text-gray-400"></div>
+            <div class="text-sm text-gray-400">Tip: Use number keys 1–7 to guess.</div>
+          </div>
+        </div>
+
+        <!-- The piano keyboard itself -->
+        <div class="flex justify-center mt-8 space-x-1">
+            <!-- White keys. The `data-note` attribute is how we tell the computer which note is which. -->
+            <div data-note="C4"
+                class="piano-key bg-white text-black p-4 w-16 md:w-20 h-40 md:h-48 rounded-b-lg shadow-lg border border-gray-300 flex items-end justify-center pb-2">
+                C</div>
+            <div data-note="D4"
+                class="piano-key bg-white text-black p-4 w-16 md:w-20 h-40 md:h-48 rounded-b-lg shadow-lg border border-gray-300 flex items-end justify-center pb-2">
+                D</div>
+            <div data-note="E4"
+                class="piano-key bg-white text-black p-4 w-16 md:w-20 h-40 md:h-48 rounded-b-lg shadow-lg border border-gray-300 flex items-end justify-center pb-2">
+                E</div>
+            <div data-note="F4"
+                class="piano-key bg-white text-black p-4 w-16 md:w-20 h-40 md:h-48 rounded-b-lg shadow-lg border border-gray-300 flex items-end justify-center pb-2">
+                F</div>
+            <div data-note="G4"
+                class="piano-key bg-white text-black p-4 w-16 md:w-20 h-40 md:h-48 rounded-b-lg shadow-lg border border-gray-300 flex items-end justify-center pb-2">
+                G</div>
+            <div data-note="A4"
+                class="piano-key bg-white text-black p-4 w-16 md:w-20 h-40 md:h-48 rounded-b-lg shadow-lg border border-gray-300 flex items-end justify-center pb-2">
+                A</div>
+            <div data-note="B4"
+                class="piano-key bg-white text-black p-4 w-16 md:w-20 h-40 md:h-48 rounded-b-lg shadow-lg border border-gray-300 flex items-end justify-center pb-2">
+                B</div>
+        </div>
+
+    </div>
+
+    <script>
+        // Use Tone.js to create a simple synthesizer that sounds like a piano.
+        // This is the "brain" of our sound engine.
+        const synth = new Tone.Synth().toDestination();
+
+        // Get all the elements we need from our HTML
+        const playNoteBtn = document.getElementById('play-note-btn');
+        const againBtn = document.getElementById('again-btn');
+        const showBtn = document.getElementById('show-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const difficultySel = document.getElementById('difficulty');
+        const scoreDisplay = document.getElementById('score-display');
+        const messageDisplay = document.getElementById('message');
+        const pianoKeys = document.querySelectorAll('.piano-key');
+        const mappingHint = document.getElementById('mapping-hint');
+
+        // Game state variables
+        let score = 0;
+        let correctNote = '';
+        const baseNotes = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'];
+        let currentNotes = [...baseNotes];
+
+        async function ensureAudioStart() {
+          try { await Tone.start(); } catch {}
+        }
+
+        function updateMappingHint() {
+          const mapping = currentNotes
+            .map((n, idx) => `${idx + 1}:${n.replace('4','')}`)
+            .join('  ');
+          mappingHint.textContent = `Keys → ${mapping}`;
+        }
+
+        // This function handles the game logic for playing a random note.
+        function startNewRound() {
+            // Pick a random note from the selected difficulty set.
+            correctNote = currentNotes[Math.floor(Math.random() * currentNotes.length)];
+
+            // Tell the synth to play the chosen note.
+            playCurrentNote();
+
+            // Update the message for the user.
+            messageDisplay.textContent = 'Which note did you hear?';
+
+            // Reset the color of all keys
+            pianoKeys.forEach(key => {
+                key.classList.remove('correct', 'incorrect');
+            });
+        }
+
+        function playCurrentNote() {
+          synth.triggerAttackRelease(correctNote, '8n');
+        }
+
+        // Add event listener to the "Play a Note" button
+        playNoteBtn.addEventListener('click', async () => { await ensureAudioStart(); startNewRound(); });
+        againBtn.addEventListener('click', async () => { await ensureAudioStart(); playCurrentNote(); });
+        showBtn.addEventListener('click', () => {
+          const key = document.querySelector(`[data-note="${correctNote}"]`);
+          if (!key) return;
+          key.classList.add('correct');
+          setTimeout(() => key.classList.remove('correct'), 600);
+        });
+        resetBtn.addEventListener('click', () => {
+          score = 0; scoreDisplay.textContent = score; startNewRound();
+        });
+
+        difficultySel.addEventListener('change', () => {
+          const val = difficultySel.value;
+          const len = val === 'easy' ? 3 : (val === 'medium' ? 5 : 7);
+          currentNotes = baseNotes.slice(0, len);
+          updateMappingHint();
+          startNewRound();
+        });
+
+        // Add event listeners to each piano key
+        pianoKeys.forEach(key => {
+            key.addEventListener('click', () => {
+                // Get the note from the data attribute on the clicked key
+                const userGuess = key.getAttribute('data-note');
+
+                // Check if the user's guess is correct
+                if (userGuess === correctNote) {
+                    messageDisplay.textContent = 'Correct! Great job!';
+                    messageDisplay.style.color = '#34d399'; // Green color
+                    score++;
+                    scoreDisplay.textContent = score;
+                    key.classList.add('correct');
+                } else {
+                    messageDisplay.textContent = 'That\'s not quite right. Try again!';
+                    messageDisplay.style.color = '#ef4444'; // Red color
+                    key.classList.add('incorrect');
+                }
+            });
+        });
+
+        // Number key shortcuts 1..7 map to current notes
+        window.addEventListener('keydown', (e) => {
+          const n = parseInt(e.key, 10);
+          if (!Number.isInteger(n)) return;
+          if (n < 1 || n > currentNotes.length) return;
+          const note = currentNotes[n - 1];
+          const key = document.querySelector(`[data-note="${note}"]`);
+          if (key) key.click();
+        });
+
+        // Start the game when the page loads
+        currentNotes = baseNotes.slice(0, 7);
+        updateMappingHint();
+        startNewRound();
+    </script>
+</body>
+
+</html>

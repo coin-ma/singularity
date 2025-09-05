@@ -1,0 +1,11 @@
+{
+  "name": "kids-projects",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Simple multi-project repo for kids with live reload dev server",
+  "scripts": {
+    "dev": "npx -y live-server --port=5173",
+    "dev:piano": "npx -y live-server --port=5173 --open=projects/piano/"
+  }
+}
+

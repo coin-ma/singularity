@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Projects Index</title>
+    <style>
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            margin: 2rem;
+            background: #0b1020;
+            color: #eef2ff;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            color: #cbd5e1;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        li a {
+            display: block;
+            padding: 12px 14px;
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 10px;
+            color: #93c5fd;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        li a:hover {
+            background: #0f172a;
+            border-color: #334155;
+        }
+
+        .error {
+            color: #fda4af;
+            margin-top: 1rem;
+        }
+
+        .hint {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 0.5rem;
+        }
+    </style>
+    <script>
+        async function loadProjects() {
+            const listEl = document.getElementById('projects');
+            const errorEl = document.getElementById('error');
+            try {
+                // Fetch the directory listing from the simple Python server.
+                const res = await fetch('projects/');
+                if (!res.ok) throw new Error('Failed to fetch projects directory');
+                const html = await res.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const anchors = Array.from(doc.querySelectorAll('a'))
+                    .map(a => a.getAttribute('href'))
+                    .filter(href => href && href.endsWith('/') && href !== '../');
+
+                const names = anchors
+                    .map(href => href.replace(/\/$/, ''))
+                    .filter(name => !name.startsWith('.'))
+                    .sort((a, b) => a.localeCompare(b));
+
+                if (names.length === 0) {
+                    listEl.innerHTML = '<li><span class="hint">No projects yet. Create one in <code>projects/&lt;name&gt;/</code>.</span></li>';
+                    return;
+                }
+
+                listEl.innerHTML = names.map(name => `
+          <li><a href="projects/${name}/">${name}</a></li>
+        `).join('');
+            } catch (err) {
+                console.error(err);
+                errorEl.textContent = 'Could not auto-list projects. Open projects manually or run a local server.';
+                listEl.innerHTML = `
+          <li><a href="projects/piano/">piano</a></li>
+        `;
+            }
+        }
+        window.addEventListener('DOMContentLoaded', loadProjects);
+    </script>
+</head>
+
+<body>
+    <h1>Our Projects</h1>
+    <p>Click a project to open it. Add new ones in <code>projects/&lt;name&gt;/</code>.</p>
+    <ul id="projects"></ul>
+    <div id="error" class="error"></div>
+    <p class="hint">Tip: run <code>npm run dev</code> (uses <code>npx live-server</code>) then visit <code>http://localhost:5173/</code>. Auto‑reload is enabled.</p>
+</body>
+
+</html>
