@@ -25,15 +25,15 @@
             box-shadow: none;
         }
 
-        /* Style for a correct guess */
-        .correct {
+        /* Style for a correct guess (override Tailwind bg-*) */
+        .piano-key.correct {
             background-color: #34d399;
             /* Green color */
             border-color: #10b981;
         }
 
-        /* Style for a wrong guess */
-        .incorrect {
+        /* Style for a wrong guess (override Tailwind bg-*) */
+        .piano-key.incorrect {
             background-color: #ef4444;
             /* Red color */
             border-color: #dc2626;
@@ -172,11 +172,17 @@
         // Add event listener to the "Play a Note" button
         playNoteBtn.addEventListener('click', async () => { await ensureAudioStart(); startNewRound(); });
         againBtn.addEventListener('click', async () => { await ensureAudioStart(); playCurrentNote(); });
-        showBtn.addEventListener('click', () => {
+        showBtn.addEventListener('click', async () => {
+          await ensureAudioStart();
           const key = document.querySelector(`[data-note="${correctNote}"]`);
           if (!key) return;
+          // Visual highlight
           key.classList.add('correct');
-          setTimeout(() => key.classList.remove('correct'), 600);
+          setTimeout(() => key.classList.remove('correct'), 1200);
+          // Play the answer and show the note name
+          playCurrentNote();
+          messageDisplay.textContent = `Answer: ${correctNote}`;
+          messageDisplay.style.color = '#93c5fd';
         });
         resetBtn.addEventListener('click', () => {
           score = 0; scoreDisplay.textContent = score; startNewRound();
