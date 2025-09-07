@@ -72,9 +72,9 @@
             <div>
               <label class="block text-left text-gray-300 font-semibold mb-1">Difficulty</label>
               <select id="difficulty" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600">
-                <option value="easy">Easy (3 keys)</option>
-                <option value="medium">Medium (5 keys)</option>
-                <option value="hard" selected>Hard (7 keys)</option>
+              <option value="easy">Easy (3 keys)</option>
+              <option value="medium" selected>Medium (5 keys)</option>
+              <option value="hard">Hard (7 keys)</option>
               </select>
             </div>
           </div>
@@ -222,7 +222,7 @@
         });
 
         // Start the game when the page loads
-        currentNotes = baseNotes.slice(0, 7);
+        currentNotes = baseNotes.slice(0, 5);
         updateMappingHint();
         startNewRound();
     </script>
