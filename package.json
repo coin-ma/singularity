@@ -4,8 +4,9 @@
   "version": "0.0.1",
   "description": "Simple multi-project repo for kids with live reload dev server",
   "scripts": {
-    "dev": "npx -y live-server --port=5173",
-    "dev:piano": "npx -y live-server --port=5173 --open=projects/piano/"
+    "gen:index": "node scripts/generate-index.mjs",
+    "dev": "npm run gen:index && npx -y live-server --port=5173",
+    "dev:piano": "npm run gen:index && npx -y live-server --port=5173 --open=projects/piano/",
+    "build": "npm run gen:index"
   }
 }
-
